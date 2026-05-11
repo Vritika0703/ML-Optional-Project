@@ -159,9 +159,10 @@ def fig_scaling_sp(n_params=None, val_losses=None):
     ns = np.array(n_params or PARAM_COUNTS, dtype=float)
     ls = np.array(val_losses or DEMO_SP_VAL_LOSSES)
     # Constrain: a>0, alpha>0, c>0 so the asymptote is physically meaningful
+    bounds = ([0.01, 0.001, 0.0], [100.0, 2.0, 5.0])
     popt, pcov = curve_fit(power_law, ns, ls,
                            p0=[2.0, 0.08, 2.0],
-                           bounds=([0.01, 0.001, 0.5], [100.0, 2.0, 5.0]),
+                           bounds=bounds,
                            maxfev=20000)
     a, alpha, c = popt
     perr = np.sqrt(np.diag(pcov))
@@ -211,7 +212,7 @@ def fig_scaling_comparison(sp_losses=None, mup_losses=None):
     spl = np.array(sp_losses  or DEMO_SP_VAL_LOSSES)
     mul = np.array(mup_losses or DEMO_MUP_VAL_LOSSES)
     # Constrain c > 0 for physically meaningful asymptotes
-    bounds = ([0.01, 0.001, 0.5], [100.0, 2.0, 5.0])
+    bounds = ([0.01, 0.001, 0.0], [100.0, 2.0, 5.0])
     sp_popt,_  = curve_fit(power_law, ns, spl, p0=[2.0, 0.08, 2.0], bounds=bounds, maxfev=20000)
     mup_popt,_ = curve_fit(power_law, ns, mul, p0=[2.0, 0.10, 1.8], bounds=bounds, maxfev=20000)
 
@@ -304,35 +305,6 @@ def fig_prefix_completion():
     plt.tight_layout()
     savefig(fig, "fig7_prefix_completion.pdf")
 
-# ─── 8. Evaluation metrics bar chart ─────────────────────────────────────────
-def fig_eval_metrics():
-    models_eval = ["Tiny","Small","Medium","Large","XL"]
-    perp  = [280, 210, 155, 112, 78]
-    xml_v = [0.42, 0.58, 0.71, 0.82, 0.91]
-    rend  = [0.31, 0.45, 0.60, 0.73, 0.85]
-    struc = [0.38, 0.53, 0.66, 0.78, 0.88]
-
-    fig, axes = plt.subplots(1,2,figsize=(13,5))
-    fig.suptitle("Evaluation Metrics by Model Size", fontsize=12, fontweight="bold")
-
-    axes[0].bar(models_eval, perp, color=COLORS, width=0.55)
-    axes[0].set_ylabel("Test Perplexity (lower = better)",fontsize=11)
-    axes[0].set_title("Test Set Perplexity")
-    axes[0].grid(axis="y",alpha=0.3)
-    for i,(m,v) in enumerate(zip(models_eval,perp)):
-        axes[0].text(i,v+3,str(v),ha="center",fontsize=9)
-
-    x = np.arange(len(models_eval)); w = 0.25
-    axes[1].bar(x-w,   xml_v, w, label="XML Validity",      color="#2196F3")
-    axes[1].bar(x,     rend,  w, label="Render Rate",        color="#4CAF50")
-    axes[1].bar(x+w,   struc, w, label="Structural Validity",color="#FF9800")
-    axes[1].set_xticks(x); axes[1].set_xticklabels(models_eval)
-    axes[1].set_ylabel("Rate (0–1)",fontsize=11)
-    axes[1].set_title("Validity Metrics by Model Size")
-    axes[1].set_ylim(0,1.05); axes[1].legend(fontsize=9)
-    axes[1].grid(axis="y",alpha=0.3)
-    plt.tight_layout(); savefig(fig, "fig8_eval_metrics.pdf")
-
 # ─── Main ─────────────────────────────────────────────────────────────────────
 def load_real_results(ckpt_root):
     ns, sp_l, mup_l = [], [], []
@@ -371,7 +343,6 @@ if __name__ == "__main__":
     sp_popt, mup_popt, pred_sp, pred_mup = fig_scaling_comparison(sp_l, mup_l)
     fig_generated_samples()
     fig_prefix_completion()
-    fig_eval_metrics()
 
     print(f"\nAll figures saved to: {OUT}/")
     print(f"  SP  scaling exponent α = {sp_popt[1]:.4f}")

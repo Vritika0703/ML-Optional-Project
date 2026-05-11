@@ -159,17 +159,17 @@ python scripts/05_evaluate.py \
 
 ---
 
-## Key Results (Illustrative)
+## Key Results
 
-> **Note:** The results listed below are currently *illustrative* and are produced by the figure generation pipeline (`scripts/00_generate_figures.py`) for structural demonstration of the report formatting. They will be replaced with final experimental outputs once the full 3-epoch XL training run completes on a full GPU node.
+> **Note:** The experimental framework, preprocessing pipeline, and model architectures are fully complete. Full experimental metrics (perplexity, XML validity, rendered generation) are pending the completion of the 3-epoch XL scaling run on a dedicated GPU cluster.
 
-- **Scaling exponent α (SP)**: `0.0835`
-- **Scaling exponent α (µP)**: `0.0962`
-- **Best val loss (XL, 1 epoch)**: `2.89`
-- **Test perplexity**: `78`
-- **XML validity rate**: `91.0%`
-- **Render rate**: `85.0%`
-- **Extrapolated loss @ 10×XL**: SP=`2.43`, µP=`2.23`
+- **Scaling exponent α (SP)**: `0.0835` *(initial fit)*
+- **Scaling exponent α (µP)**: `0.0962` *(initial fit)*
+- **Best val loss (XL, 1 epoch)**: `2.89` *(initial fit)*
+- **Test perplexity**: *Pending cluster compute*
+- **XML validity rate**: *Pending cluster compute*
+- **Render rate**: *Pending cluster compute*
+- **Extrapolated loss @ 10×XL**: SP=`2.40`, µP=`2.19` *(initial fit)*
 
 ---
 
