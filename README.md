@@ -159,15 +159,17 @@ python scripts/05_evaluate.py \
 
 ---
 
-## Key Results (to be filled in after experiments)
+## Key Results (Illustrative)
 
-- **Scaling exponent α (SP)**: _TBD_
-- **Scaling exponent α (µP)**: _TBD_
-- **Best val loss (XL, 1 epoch)**: _TBD_
-- **Test perplexity**: _TBD_
-- **XML validity rate**: _TBD_
-- **Render rate**: _TBD_
-- **Extrapolated loss @ 10×XL**: _TBD_
+> **Note:** The results listed below are currently *illustrative* and are produced by the figure generation pipeline (`scripts/00_generate_figures.py`) for structural demonstration of the report formatting. They will be replaced with final experimental outputs once the full 3-epoch XL training run completes on a full GPU node.
+
+- **Scaling exponent α (SP)**: `0.0835`
+- **Scaling exponent α (µP)**: `0.0962`
+- **Best val loss (XL, 1 epoch)**: `2.89`
+- **Test perplexity**: `78`
+- **XML validity rate**: `91.0%`
+- **Render rate**: `85.0%`
+- **Extrapolated loss @ 10×XL**: SP=`2.43`, µP=`2.23`
 
 ---
 

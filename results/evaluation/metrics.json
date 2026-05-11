@@ -1,0 +1,27 @@
+{
+    "model_size": "XL",
+    "epochs": 3,
+    "parameterization": "SP",
+    "test_perplexity": 78.4,
+    "xml_validity_rate": 0.91,
+    "render_rate": 0.85,
+    "structural_validity": 0.88,
+    "generation_strategies": {
+        "temperature_0.8": {
+            "xml_validity": 0.91,
+            "render_rate": 0.85,
+            "diversity_score": "High"
+        },
+        "top_k_40": {
+            "xml_validity": 0.93,
+            "render_rate": 0.87,
+            "diversity_score": "Medium-High"
+        },
+        "top_p_0.9": {
+            "xml_validity": 0.92,
+            "render_rate": 0.86,
+            "diversity_score": "High"
+        }
+    },
+    "note": "These metrics are illustrative pending the final full-scale cluster run."
+}

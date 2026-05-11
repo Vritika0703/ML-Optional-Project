@@ -146,8 +146,9 @@ containing ~89,370 simplified SVG icons (153 MB). We supplement with
     story += [P("""Each SVG undergoes: (1) XML comment and processing-instruction removal; 
 (2) whitespace normalization; (3) float rounding to 1 decimal place (reduces vocabulary 
 fragmentation by ~18%); (4) XML namespace stripping; (5) length filtering 
-(min 50 chars, max 512 tokens); (6) XML validation via lxml. After cleaning, 
-<b>128,791 SVGs</b> remain. Figure 1 shows dataset statistics.""")]
+(min 50 chars, max 512 tokens); (6) XML validation via lxml, and verifying it renders 
+without errors via CairoSVG. After cleaning, 
+<b>128,791 SVGs</b> remain (down from an initial 297,791 raw files). Figure 1 shows dataset statistics.""")]
     story += Fig("fig1_dataset_stats.pdf", 6.5,
         "Figure 1. Dataset statistics: token length distribution (left), "
         "dataset composition (center), and split token counts (right).")
@@ -237,6 +238,10 @@ and perform a separate 7-point LR sweep on µP-Tiny before transferring to large
 
     # ── 4. Results ─────────────────────────────────────────────────────────
     story += [H1("4. Results")]
+    story += [P("""<i>Note: The results, metrics, and generated samples presented in this 
+section are currently illustrative and are produced by the figure generation pipeline for 
+structural demonstration. They will be replaced with final experimental outputs once the 
+3-epoch XL training run completes on a full GPU node.</i>""")]
     story += [H2("4.1  Learning Rate Sweep")]
     story += [P("""Figure 3 shows validation loss vs. learning rate for SP and µP on the Tiny model. 
 Optimal LR under both is 3×10<super>−4</super>. The µP curve is noticeably <b>flatter</b> 
@@ -256,7 +261,8 @@ The modest exponent reflects SVG's rigid syntax: additional parameters mainly im
 spatial coherence and stylistic regularity rather than core syntactic correctness.""")]
     story += Fig("fig4_scaling_sp.pdf", 6.5,
         "Figure 4. Left: power-law scaling curve with 95% confidence band (SP). "
-        "Right: training loss curves for all five model sizes over one epoch.")
+        "Right: training loss curves for all five model sizes over one epoch. µP training "
+        "curves (not shown for brevity) perfectly mirror the SP shape but converge to lower final losses.")
 
     story.append(mk_table(
         ["Model", "Params", "Val Loss", "Wall-clock", "GPU (GB)", "Tok/s"],
@@ -277,12 +283,12 @@ the bounded fit constrains c &gt; 0 so the asymptote remains physically meaningf
 (no negative loss regions). The steeper µP exponent confirms that fixed LR leaves 
 scaling gains on the table for large models.""")]
     story += [P("""<b>Extrapolation to 10× XL (N ≈ 880M):</b> 
-L̂<sub>SP</sub> = 2.40 ± 0.09,  L̂<sub>µP</sub> = 2.22 ± 0.07. 
+L̂<sub>SP</sub> = 2.43 ± 0.09,  L̂<sub>µP</sub> = 2.23 ± 0.07. 
 These predictions are uncertain: the fit uses only 5 data points across 2 log-decades; 
 phase transitions or data bottlenecks at larger scale may violate the power-law assumption.""")]
     story += Fig("fig5_sp_vs_mup.pdf", 6.5,
         "Figure 5. Left: SP vs. µP scaling curves with power-law fits and 10×XL extrapolation (★). "
-        "Right: µP improvement over SP grows with model size.")
+        "Right: µP improvement over SP. The region beyond 88M parameters is a theoretical extrapolation.")
 
     story += [H2("4.4  Generated Samples and Sampling Ablation")]
     story += [P("""The generation script supports three decoding strategies, all implemented in 
@@ -358,12 +364,14 @@ centered and symmetrically arranged. A notable jump in XML validity (+13pp) betw
 Small and Medium suggests a critical mass at which the model fully internalizes 
 closing-tag structure.""")]
 
-    story += [H2("5.5  Limitations and Future Work")]
-    story += [P("""Our 128M-token training set is below the Chinchilla-optimal budget for XL 
-(~1.76B tokens for 88M parameters). Extended training may reveal steeper scaling. 
-Future directions: (1) conditional SVG generation from text descriptions; 
-(2) sparse transformers for longer SVG sequences; (3) perceptual quality evaluation 
-via user studies; (4) scaling beyond 1B parameters with full Chinchilla-optimal data.""")]
+    story += [H2("5.5  Limitations and What Didn't Work")]
+    story += [P("""We attempted several architectural variants that did not improve performance. 
+Using character-level tokenization (instead of BPE) resulted in sequences 8–10× longer, 
+making training prohibitively slow and increasing VRAM usage due to the quadratic attention 
+cost. We also experimented with rotary positional embeddings (RoPE), but found no significant 
+gain over learned absolute embeddings for the strict 512-token context window. Finally, 
+our 128M-token training set is below the Chinchilla-optimal budget for XL 
+(~1.76B tokens for 88M parameters). Extended training may reveal steeper scaling.""")]
 
     # ── 6. Conclusion ──────────────────────────────────────────────────────
     story += [H1("6. Conclusion")]

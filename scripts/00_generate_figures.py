@@ -211,7 +211,7 @@ def fig_scaling_comparison(sp_losses=None, mup_losses=None):
     spl = np.array(sp_losses  or DEMO_SP_VAL_LOSSES)
     mul = np.array(mup_losses or DEMO_MUP_VAL_LOSSES)
     # Constrain c > 0 for physically meaningful asymptotes
-    bounds = ([0.001, 0.001, 0.0], [100.0, 2.0, 5.0])
+    bounds = ([0.01, 0.001, 0.5], [100.0, 2.0, 5.0])
     sp_popt,_  = curve_fit(power_law, ns, spl, p0=[2.0, 0.08, 2.0], bounds=bounds, maxfev=20000)
     mup_popt,_ = curve_fit(power_law, ns, mul, p0=[2.0, 0.10, 1.8], bounds=bounds, maxfev=20000)
 
