@@ -1,0 +1,83 @@
+# Model configurations for scaling study
+# All sizes follow the same general architecture pattern
+
+models:
+  tiny:
+    name: "tiny"
+    n_params_approx: "1M"
+    d_model: 128
+    n_layers: 4
+    n_heads: 4
+    d_ff: 512
+    dropout: 0.1
+    bias: false
+
+  small:
+    name: "small"
+    n_params_approx: "3M"
+    d_model: 192
+    n_layers: 6
+    n_heads: 6
+    d_ff: 768
+    dropout: 0.1
+    bias: false
+
+  medium:
+    name: "medium"
+    n_params_approx: "10M"
+    d_model: 384
+    n_layers: 6
+    n_heads: 6
+    d_ff: 1536
+    dropout: 0.1
+    bias: false
+
+  large:
+    name: "large"
+    n_params_approx: "30M"
+    d_model: 512
+    n_layers: 10
+    n_heads: 8
+    d_ff: 2048
+    dropout: 0.1
+    bias: false
+
+  xl:
+    name: "xl"
+    n_params_approx: "88M"
+    d_model: 768
+    n_layers: 12
+    n_heads: 12
+    d_ff: 3072
+    dropout: 0.1
+    bias: false
+
+# Training hyperparameters
+training:
+  context_length: 512
+  batch_size_tokens: 131072  # ~128K tokens per batch
+  optimizer: "adamw"
+  beta1: 0.9
+  beta2: 0.95
+  weight_decay: 0.1
+  grad_clip: 1.0
+  warmup_iters: 2000
+  lr_decay: "cosine"
+  min_lr_ratio: 0.1   # min_lr = lr * min_lr_ratio
+  epochs: 1
+
+# Data config
+data:
+  vocab_size: 4096
+  max_token_length: 512
+  min_char_length: 50
+  train_split: 0.98
+  val_split: 0.01
+  test_split: 0.01
+  seed: 42
+
+# Learning rate sweep config (for tiny model)
+lr_sweep:
+  learning_rates: [1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 3e-3, 1e-2]
+  model: "tiny"
+  eval_iters: 200
