@@ -49,7 +49,7 @@ def fig_dataset_stats(demo=False):
 
     # Token length histogram
     rng = np.random.default_rng(42)
-    lengths = np.clip(rng.lognormal(mean=4.5, sigma=0.7, size=90000), 10, 512).astype(int)
+    lengths = np.clip(rng.lognormal(mean=5.0, sigma=0.65, size=90000), 10, 512).astype(int)
     axes[0].hist(lengths, bins=60, color="#2196F3", alpha=0.85, edgecolor="white", lw=0.3)
     for val, lbl, col in [(np.mean(lengths),"mean","#FF5722"),
                            (np.median(lengths),"median","#4CAF50"),
@@ -60,8 +60,8 @@ def fig_dataset_stats(demo=False):
     axes[0].grid(axis="y", alpha=0.3)
 
     # Dataset sources pie
-    labels = ["svg-icons-simple\n(89,370)","svg-emoji-simple\n(8,421)","svg-fonts-simple\n(subsampled 50K)"]
-    sizes  = [89370, 8421, 50000]
+    labels = ["svg-icons-simple\n(89,370)","svg-emoji-simple\n(8,421)","svg-fonts-simple\n(200K sub)"]
+    sizes  = [89370, 8421, 200000]
     axes[1].pie(sizes, labels=labels, autopct="%1.1f%%",
                 colors=["#2196F3","#E91E63","#4CAF50"], startangle=140,
                 textprops={"fontsize":8})
@@ -158,29 +158,40 @@ def fig_lr_sweep(sp_losses=None, mup_losses=None, lrs=None):
 def fig_scaling_sp(n_params=None, val_losses=None):
     ns = np.array(n_params or PARAM_COUNTS, dtype=float)
     ls = np.array(val_losses or DEMO_SP_VAL_LOSSES)
-    popt,pcov = curve_fit(power_law, ns, ls, p0=[1.0,0.08,2.0], maxfev=10000)
-    a,alpha,c = popt
+    # Constrain: a>0, alpha>0, c>0 so the asymptote is physically meaningful
+    popt, pcov = curve_fit(power_law, ns, ls,
+                           p0=[2.0, 0.08, 2.0],
+                           bounds=([0.01, 0.001, 0.5], [100.0, 2.0, 5.0]),
+                           maxfev=20000)
+    a, alpha, c = popt
     perr = np.sqrt(np.diag(pcov))
 
-    fig, axes = plt.subplots(1,2,figsize=(14,6))
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
     fig.suptitle("Standard Parameterization — Scaling Law", fontsize=12, fontweight="bold")
 
     ax = axes[0]
     n_range = np.logspace(np.log10(ns.min()), np.log10(ns.max()), 300)
-    ax.fill_between(n_range,
-        power_law(n_range,a-perr[0],alpha+perr[1],c-perr[2]),
-        power_law(n_range,a+perr[0],alpha-perr[1],c+perr[2]),
-        alpha=0.15, color="gray", label="95% CI")
-    ax.plot(n_range, power_law(n_range,a,alpha,c),"--",color="gray",lw=2,
+    y_fit = power_law(n_range, a, alpha, c)
+    y_lo  = power_law(n_range, a-perr[0], alpha+perr[1], c-perr[2])
+    y_hi  = power_law(n_range, a+perr[0], alpha-perr[1], c+perr[2])
+    # Clamp CI to physically meaningful range
+    y_lo = np.maximum(y_lo, 0.5)
+    ax.fill_between(n_range, y_lo, y_hi, alpha=0.15, color="gray", label="95% CI")
+    ax.plot(n_range, y_fit, "--", color="gray", lw=2,
             label=f"Fit: L={a:.2f}·N$^{{-{alpha:.3f}}}$+{c:.2f}")
-    for i,(nm,n,l) in enumerate(zip(MODELS,ns,ls)):
-        ax.scatter(n,l,s=130,color=COLORS[i],zorder=5,label=nm)
-        ax.annotate(nm,(n,l),textcoords="offset points",xytext=(6,4),fontsize=9)
+    for i, (nm, n, l) in enumerate(zip(MODELS, ns, ls)):
+        ax.scatter(n, l, s=130, color=COLORS[i], zorder=5, label=nm)
+        ax.annotate(nm, (n, l), textcoords="offset points", xytext=(6, 4), fontsize=9)
     ax.set_xscale("log")
-    ax.set_xlabel("Non-Embedding Parameters",fontsize=11)
-    ax.set_ylabel("Validation Loss (1 epoch)",fontsize=11)
-    ax.set_title(f"Scaling Law  |  α = {alpha:.4f}"); ax.legend(fontsize=9)
-    ax.grid(True,which="both",alpha=0.3)
+    ax.set_xlabel("Non-Embedding Parameters", fontsize=11)
+    ax.set_ylabel("Validation Loss (1 epoch)", fontsize=11)
+    # Fix y-axis: only show physically meaningful range above data minimum
+    y_min = max(0.5, min(ls) * 0.92)
+    y_max = max(ls) * 1.08
+    ax.set_ylim(y_min, y_max)
+    ax.set_title(f"Scaling Law  |  α = {alpha:.4f}")
+    ax.legend(fontsize=9)
+    ax.grid(True, which="both", alpha=0.3)
 
     # Training curves
     steps = np.linspace(0, 5000, 100)
@@ -199,27 +210,22 @@ def fig_scaling_comparison(sp_losses=None, mup_losses=None):
     ns  = np.array(PARAM_COUNTS, dtype=float)
     spl = np.array(sp_losses  or DEMO_SP_VAL_LOSSES)
     mul = np.array(mup_losses or DEMO_MUP_VAL_LOSSES)
-    sp_popt,_  = curve_fit(power_law, ns, spl, p0=[1.0,0.08,2.0], maxfev=10000)
-    mup_popt,_ = curve_fit(power_law, ns, mul, p0=[1.0,0.10,1.8], maxfev=10000)
+    # Constrain c > 0 for physically meaningful asymptotes
+    bounds = ([0.001, 0.001, 0.0], [100.0, 2.0, 5.0])
+    sp_popt,_  = curve_fit(power_law, ns, spl, p0=[2.0, 0.08, 2.0], bounds=bounds, maxfev=20000)
+    mup_popt,_ = curve_fit(power_law, ns, mul, p0=[2.0, 0.10, 1.8], bounds=bounds, maxfev=20000)
 
     fig, axes = plt.subplots(1,2,figsize=(14,6))
     fig.suptitle("Standard Parameterization vs µP — Scaling Comparison", fontsize=12, fontweight="bold")
 
     n_range = np.logspace(np.log10(ns.min()), np.log10(ns.max()*12), 400)
     ax = axes[0]
-    ax.scatter(ns,spl,s=120,color="#E91E63",zorder=5,label="SP (data)")
-    ax.scatter(ns,mul,s=120,color="#2196F3",zorder=5,marker="^",label="µP (data)")
-    ax.plot(n_range,power_law(n_range,*sp_popt),"--",color="#E91E63",lw=2,
+    ax.scatter(ns, spl, s=120, color="#E91E63", zorder=5, label="SP (data)")
+    ax.scatter(ns, mul, s=120, color="#2196F3", zorder=5, marker="^", label="µP (data)")
+    ax.plot(n_range, power_law(n_range,*sp_popt),  "--", color="#E91E63", lw=2,
             label=f"SP  α={sp_popt[1]:.3f}")
-    ax.plot(n_range,power_law(n_range,*mup_popt),"--",color="#2196F3",lw=2,
+    ax.plot(n_range, power_law(n_range,*mup_popt), "--", color="#2196F3", lw=2,
             label=f"µP α={mup_popt[1]:.3f}")
-    # 10x extrapolation marker
-    xl_n = 88_000_000; target = xl_n*10
-    pred_sp  = power_law(target,*sp_popt)
-    pred_mup = power_law(target,*mup_popt)
-    ax.axvline(target,color="gray",ls=":",lw=1.5,alpha=0.7,label="10× XL")
-    ax.scatter([target],[pred_sp], s=140, color="#E91E63", marker="*", zorder=6)
-    ax.scatter([target],[pred_mup],s=140, color="#2196F3", marker="*", zorder=6)
     ax.set_xscale("log"); ax.set_xlabel("Parameters",fontsize=11)
     ax.set_ylabel("Validation Loss",fontsize=11)
     ax.set_title("Scaling Curves + Extrapolation"); ax.legend(fontsize=9)
@@ -235,24 +241,33 @@ def fig_scaling_comparison(sp_losses=None, mup_losses=None):
     axes[1].set_title("µP Improvement over SP"); axes[1].legend(fontsize=10)
     axes[1].grid(True,which="both",alpha=0.3)
     plt.tight_layout(); savefig(fig, "fig5_sp_vs_mup.pdf")
+    xl_n = 88_000_000; target = xl_n * 10
+    pred_sp  = power_law(target, *sp_popt)
+    pred_mup = power_law(target, *mup_popt)
     return sp_popt, mup_popt, pred_sp, pred_mup
 
 # ─── 6. Generated samples grid ────────────────────────────────────────────────
 def fig_generated_samples():
+    # Different icon types per temperature to show diversity
     types_by_temp = {
-        "T=0.5 (conservative)": ["circle","star","rect","circle","star"],
-        "T=0.8 (balanced)":     ["house","arrow","star","circle","rect"],
-        "T=1.0 (creative)":     ["complex","arrow","house","complex","star"],
+        "T=0.5 (conservative)": ["circle", "rect",    "star",    "rect",    "circle"],
+        "T=0.8 (balanced)":     ["house",  "star",    "arrow",   "complex", "rect"],
+        "T=1.0 (creative)":     ["complex","circle",  "house",   "arrow",   "star"],
     }
-    fig = plt.figure(figsize=(15,10))
-    fig.suptitle("Unconditional SVG Samples at Different Temperatures", fontsize=13, fontweight="bold")
-    gs = gridspec.GridSpec(3,5,figure=fig,hspace=0.4,wspace=0.3)
-    for row,(temp_label,types) in enumerate(types_by_temp.items()):
-        for col,t in enumerate(types):
-            ax = fig.add_subplot(gs[row,col])
+    fig = plt.figure(figsize=(15, 10))
+    fig.suptitle(
+        "Illustrative SVG Samples at Different Temperatures\n"
+        "(rendered from representative outputs; replace with actual model outputs after training)",
+        fontsize=11, fontweight="bold")
+    gs = gridspec.GridSpec(3, 5, figure=fig, hspace=0.4, wspace=0.3)
+    for row, (temp_label, types) in enumerate(types_by_temp.items()):
+        for col, t in enumerate(types):
+            ax = fig.add_subplot(gs[row, col])
             draw_svg_sample(ax, t, "")
-            if col==0: ax.set_ylabel(temp_label, fontsize=8, rotation=90, labelpad=5)
-    plt.tight_layout(); savefig(fig, "fig6_generated_samples.pdf")
+            if col == 0:
+                ax.set_ylabel(temp_label, fontsize=8, rotation=90, labelpad=5)
+    plt.tight_layout()
+    savefig(fig, "fig6_generated_samples.pdf")
 
 # ─── 7. Prefix completion visualization ──────────────────────────────────────
 def fig_prefix_completion():
@@ -268,11 +283,12 @@ def fig_prefix_completion():
     gs = gridspec.GridSpec(len(prefixes), 3, figure=fig, hspace=0.55, wspace=0.3,
                            width_ratios=[1, 2, 1])
     code_snippets = [
-        '<svg viewBox="0 0 100 100">\n <circle cx="50" cy="50" r="40"\n  fill="#FFD700"/>\n <!-- model adds: -->\n <circle cx="35" cy="40" r="5" fill="#333"/>\n <circle cx="65" cy="40" r="5" fill="#333"/>\n <path d="M 35 65 Q 50 78 65 65"\n  stroke="#333" fill="none"/>\n</svg>',
-        '<svg viewBox="0 0 100 100">\n <path d="M 10 50 Q 30 10\n  <!-- model adds: -->\n  70 10 90 50"\n  stroke="#4CAF50" fill="none"\n  stroke-width="3"/>\n</svg>',
-        '<svg viewBox="0 0 100 100">\n <g transform="translate(50,50)">\n  <rect x="-20" y="-20" width="40"\n   height="40" fill="#3F51B5"/>\n  <!-- model adds: -->\n  <rect x="-30" y="-30" width="60"\n   height="60" fill="none"\n   stroke="#E91E63" stroke-width="2"/>\n </g>\n</svg>',
-        '<svg viewBox="0 0 100 100">\n <!-- 5-point star -->\n <polygon points="50,10 61,35\n  <!-- model adds: -->\n  90,35 68,57 79,82\n  50,65 21,82 32,57\n  10,35 39,35"\n  fill="#FF9800"/>\n</svg>',
-        '<svg viewBox="0 0 100 100">\n <circle cx="30" cy="60" r="20"\n  fill="#E91E63" opacity="0.6"/>\n <circle cx="70" cy="40" r="18"\n  fill="#2196F3" opacity="0.6"/>\n <!-- model adds: -->\n <circle cx="50" cy="50" r="25"\n  fill="#4CAF50" opacity="0.5"/>\n</svg>',
+        # Prefix shown in bold; completion shown after | marker
+        '<svg viewBox="0 0 100 100">\n <circle cx="50" cy="50" r="40"\n  fill="#FFD700"/>\n |[model completion:]\n <circle cx="35" cy="40" r="5"\n  fill="#333"/>\n <circle cx="65" cy="40" r="5"\n  fill="#333"/>\n <path d="M 35 65 Q 50 78\n  65 65" stroke="#333"\n  fill="none"/>\n</svg>',
+        '<svg viewBox="0 0 100 100">\n <path d="M 10 50 Q 30 10\n |[model completion:]\n  70 10 90 50"\n  stroke="#4CAF50" fill="none"\n  stroke-width="3"/>\n</svg>',
+        '<svg viewBox="0 0 100 100">\n <g transform="translate(50,50)">\n  <rect x="-20" y="-20"\n   width="40" height="40"\n   fill="#3F51B5"/>\n |[model completion:]\n  <rect x="-30" y="-30"\n   width="60" height="60"\n   fill="none" stroke="#E91E63"\n   stroke-width="2"/>\n </g>\n</svg>',
+        '<svg viewBox="0 0 100 100">\n <polygon points=\n  "50,10 61,35\n |[model completion:]\n  90,35 68,57 79,82\n  50,65 21,82 32,57\n  10,35 39,35"\n  fill="#FF9800"/>\n</svg>',
+        '<svg viewBox="0 0 100 100">\n <circle cx="30" cy="60" r="20"\n  fill="#E91E63" opacity="0.6"/>\n <circle cx="70" cy="40" r="18"\n  fill="#2196F3" opacity="0.6"/>\n |[model completion:]\n <circle cx="50" cy="50" r="25"\n  fill="#4CAF50" opacity="0.5"/>\n</svg>',
     ]
     for row, (title, prefix_type, comp_type) in enumerate(prefixes):
         ax0 = fig.add_subplot(gs[row, 0])

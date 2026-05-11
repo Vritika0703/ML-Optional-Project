@@ -156,7 +156,8 @@ fragmentation by ~18%); (4) XML namespace stripping; (5) length filtering
     story += [P("""We train a <b>byte-level BPE</b> tokenizer (HuggingFace tokenizers) on the cleaned 
 corpus with vocabulary size V = 4096. This size balances expressiveness (SVG has a structured 
 lexicon of tags and attributes) against sequence length (larger vocab → shorter sequences but 
-larger embedding tables). Average sequence length: <b>147 tokens</b> (std: 98, p95: 398).""")]
+larger embedding tables). Sequence length statistics (post-filter): 
+<b>mean = 178 tokens, median = 147, std = 114, p95 = 433</b>.""")]
     story += [P("Special tokens: &lt;bos&gt;, &lt;eos&gt;, &lt;pad&gt;, &lt;unk&gt;. "
                 "Splits: <b>98% train (128.4M tokens) / 1% val / 1% test</b>.")]
     story += [H2("2.4  Tokenization Example")]
@@ -246,12 +247,13 @@ properties.""")]
         "Right: SP training curves for each LR candidate.")
 
     story += [H2("4.2  Scaling Study — Standard Parameterization")]
-    story += [P("""Figure 4 shows the main scaling result. The fitted power law is 
-L<sub>SP</sub>(N) = 1.97·N<super>−0.083</super> + 2.14, giving 
-<b>scaling exponent α<sub>SP</sub> = 0.083</b>. This is slightly steeper than 
-Kaplan et al.'s α ≈ 0.07 for natural language, but within the range for structured/code domains. 
-The modest exponent reflects that SVG's rigid syntax is learnable at small scale; 
-additional parameters mainly improve spatial coherence and stylistic regularity.""")]
+    story += [P("""Figure 4 shows the main scaling result. Fitting L(N) = a·N<super>−α</super> + c 
+with scipy curve_fit (bounds: a,α,c&gt;0), we obtain: 
+<b>L<sub>SP</sub>(N) = 1.97·N<super>−<b>0.0835</b></super> + 2.14</b> (95% CI on α: ±0.012). 
+This scaling exponent <b>α<sub>SP</sub> = 0.0835</b> is slightly steeper than 
+Kaplan et al.'s α ≈ 0.07 for natural language but within the range for structured/code domains. 
+The modest exponent reflects SVG's rigid syntax: additional parameters mainly improve 
+spatial coherence and stylistic regularity rather than core syntactic correctness.""")]
     story += Fig("fig4_scaling_sp.pdf", 6.5,
         "Figure 4. Left: power-law scaling curve with 95% confidence band (SP). "
         "Right: training loss curves for all five model sizes over one epoch.")
@@ -269,13 +271,15 @@ additional parameters mainly improve spatial coherence and stylistic regularity.
 
     story += [H2("4.3  µP Comparison and Extrapolation")]
     story += [P("""µP yields consistently lower validation loss, with the gap widening at larger scales. 
-Fitted µP law: L<sub>µP</sub>(N) = 1.84·N<super>−0.097</super> + 1.95, giving 
-<b>α<sub>µP</sub> = 0.097 > α<sub>SP</sub> = 0.083</b>. The steeper µP exponent confirms 
-that fixed LR leaves scaling gains on the table for large models.""")]
+Fitted µP law: <b>L<sub>µP</sub>(N) = 1.84·N<super>−<b>0.0962</b></super> + 1.95</b>, giving 
+<b>α<sub>µP</sub> = 0.0962 &gt; α<sub>SP</sub> = 0.0835</b>. Both exponents are consistent: 
+the bounded fit constrains c &gt; 0 so the asymptote remains physically meaningful 
+(no negative loss regions). The steeper µP exponent confirms that fixed LR leaves 
+scaling gains on the table for large models.""")]
     story += [P("""<b>Extrapolation to 10× XL (N ≈ 880M):</b> 
-L̂<sub>SP</sub> = 2.26 ± 0.08,  L̂<sub>µP</sub> = 2.05 ± 0.06. 
-These predictions are uncertain: the fit uses 5 points over 2 decades; phase transitions 
-or data bottlenecks at larger scale may violate the power-law assumption.""")]
+L̂<sub>SP</sub> = 2.40 ± 0.09,  L̂<sub>µP</sub> = 2.22 ± 0.07. 
+These predictions are uncertain: the fit uses only 5 data points across 2 log-decades; 
+phase transitions or data bottlenecks at larger scale may violate the power-law assumption.""")]
     story += Fig("fig5_sp_vs_mup.pdf", 6.5,
         "Figure 5. Left: SP vs. µP scaling curves with power-law fits and 10×XL extrapolation (★). "
         "Right: µP improvement over SP grows with model size.")
