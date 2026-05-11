@@ -1,0 +1,11 @@
+# Large data files
+data/
+checkpoints/
+*.npy
+*.pt
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
