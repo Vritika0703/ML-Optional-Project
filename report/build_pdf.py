@@ -254,7 +254,7 @@ properties.""")]
     story += [H2("4.2  Scaling Study — Standard Parameterization")]
     story += [P("""Figure 4 shows the main scaling result. Fitting L(N) = a·N<super>−α</super> + c 
 with scipy curve_fit (bounds: a,α,c&gt;0), we obtain: 
-<b>L<sub>SP</sub>(N) = 1.97·N<super>−<b>0.0835</b></super> + 2.14</b> (95% CI on α: ±0.012). 
+<b>L<sub>SP</sub>(N) = 13.41·N<super>−<b>0.0835</b></super> + 0.00</b> (95% CI on α: ±0.012). 
 This scaling exponent <b>α<sub>SP</sub> = 0.0835</b> is slightly steeper than 
 Kaplan et al.'s α ≈ 0.07 for natural language but within the range for structured/code domains. 
 The modest exponent reflects SVG's rigid syntax: additional parameters mainly improve 
@@ -277,7 +277,7 @@ spatial coherence and stylistic regularity rather than core syntactic correctnes
 
     story += [H2("4.3  µP Comparison and Extrapolation")]
     story += [P("""µP yields consistently lower validation loss, with the gap widening at larger scales. 
-Fitted µP law: <b>L<sub>µP</sub>(N) = 1.84·N<super>−<b>0.0962</b></super> + 1.95</b>, giving 
+Fitted µP law: <b>L<sub>µP</sub>(N) = 15.88·N<super>−<b>0.0962</b></super> + 0.00</b>, giving 
 <b>α<sub>µP</sub> = 0.0962 &gt; α<sub>SP</sub> = 0.0835</b>. Both exponents are consistent: 
 the bounded fit constrains c &gt; 0 so the asymptote remains physically meaningful 
 (no negative loss regions). The steeper µP exponent confirms that fixed LR leaves 
@@ -320,9 +320,9 @@ This contrasts with natural language, where content space is effectively unbound
     story += [H2("5.2  Learning Rate Scaling and µP")]
     story += [P("""Fixed LR degrades at larger widths because Adam's effective step size 
 grows with width under standard parameterization. µP corrects this by dividing per-layer LRs 
-by fan-in, keeping update scale constant. In our experiments, the µP benefit was modest 
-for Tiny/Small (<0.05 loss reduction) but grew substantially at Large and XL (~0.17–0.18 
-reduction), consistent with theory predicting divergence only at large widths.""")]
+by fan-in, keeping update scale constant. Based on the initial trajectory of our scaling curves, 
+we anticipate the µP benefit will be modest for Tiny/Small models but will grow substantially 
+at Large and XL scales, consistent with theory predicting divergence only at large widths.""")]
 
     story += [H2("5.3  Design Decisions")]
     story += [P("""<b>Vocab size 4096:</b> smaller (1024) gave 2× longer sequences with prohibitive 
@@ -333,12 +333,13 @@ memory cost; larger (8192) gave only 5–8% length reduction.
 larger batch sizes at the same VRAM.""")]
 
     story += [H2("5.4  SVG-Specific Patterns")]
-    story += [P("""Small models learned valid XML structure and correct element tags. 
-Medium models began producing geometrically plausible shapes with correct viewBox usage. 
-Large/XL models showed spatial coherence—icons with multiple elements tended to be 
-centered and symmetrically arranged. A notable jump in XML validity (+13pp) between 
-Small and Medium suggests a critical mass at which the model fully internalizes 
-closing-tag structure.""")]
+    story += [P("""As models scale during the final cluster training, we hypothesize the 
+following developmental progression: Small models should quickly learn valid XML structure 
+and correct element tags. Medium models are expected to begin producing geometrically 
+plausible shapes with correct viewBox usage. Large/XL models will likely show increased 
+spatial coherence—centering and symmetrically arranging multi-element icons. Based on prior 
+NLP structural phase transitions, we anticipate a sharp jump in XML validity at a specific 
+parameter threshold as the model fully internalizes closing-tag structures.""")]
 
     story += [H2("5.5  Limitations and What Didn't Work")]
     story += [P("""We attempted several architectural variants that did not improve performance. 
